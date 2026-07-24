@@ -4,7 +4,9 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#087f8c"><meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png">
-<title>우리 가족 바다 — 전국</title>
+<title>찌현 물놀이 대시보드 — 전국판</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+ integrity="sha256-p4NxAoJBhIINfQ3ynhHQJ4ZBq5y4ZbF4Y7T4R4Y7yM8=" crossorigin="">
 <style>
 :root{--bg:#f3f7f8;--card:#fff;--text:#14343a;--muted:#71878c;--p:#087f8c;--line:#dce9eb;--good:#188a46;--warn:#da8200;--bad:#d84a4a}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif}
@@ -28,34 +30,86 @@ header{padding:20px 3px 10px}.eyebrow{font-size:11px;font-weight:900;letter-spac
 .bottom{position:fixed;left:0;right:0;bottom:0;background:#fffffff2;backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:9px 12px calc(9px + env(safe-area-inset-bottom));z-index:9}.bottomIn{max-width:1000px;margin:auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}.bottom button,.bottom a{border:0;border-radius:13px;padding:12px 5px;text-align:center;text-decoration:none;font-size:11px;font-weight:900}.bottom button{background:#173b42;color:#fff}.bottom a{background:#e9f5f6;color:var(--p)}
 .modal{display:none;position:fixed;inset:0;background:#0b2026aa;z-index:20;padding:20px 12px;overflow:auto}.sheet{max-width:600px;margin:auto;background:#fff;border-radius:23px;padding:17px}.sheetHead{display:flex;justify-content:space-between}.close{border:0;background:#edf3f4;border-radius:10px;padding:8px 11px}.chart{height:150px;display:flex;align-items:end;gap:5px;padding:15px 3px 4px;border-bottom:1px solid var(--line);margin:8px 0 14px}.barWrap{flex:1;text-align:center;font-size:8px;color:var(--muted)}.bar{background:linear-gradient(#0aa3a3,#80d3cd);border-radius:5px 5px 0 0;min-height:3px}.detailGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.dbox{background:#f4f8f9;border-radius:12px;padding:11px}.dbox small{color:var(--muted)}.mapbtn{display:block;text-decoration:none;text-align:center;background:#173b42;color:#fff;border-radius:13px;padding:12px;margin-top:12px;font-weight:900}
 @media(min-width:650px){.grid{grid-template-columns:1fr 1fr}.app{padding-left:22px;padding-right:22px}}
+
+.modebar{display:flex;gap:7px;overflow:auto;margin:0 0 10px;scrollbar-width:none}
+.mode{border:1px solid var(--line);background:#fff;border-radius:14px;padding:10px 12px;white-space:nowrap;font-size:12px;font-weight:900}
+.mode.active{background:#087f8c;color:#fff;border-color:#087f8c}
+.weekend{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;margin:0 0 12px}
+.weekendHead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.weekend h3{margin:0;font-size:16px}.weekend button{border:0;background:#173b42;color:#fff;border-radius:11px;padding:9px;font-weight:900}
+.weekendList{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}
+.weekendItem{background:#f4f8f9;border-radius:11px;padding:9px;font-size:11px}.weekendItem b{display:block;font-size:13px}
+#map{height:62vh;min-height:410px;border-radius:18px;overflow:hidden}
+.mapPanel{display:none;background:#fff;border:1px solid var(--line);border-radius:19px;padding:10px;margin-bottom:12px}
+.viewtabs{display:flex;gap:7px;margin:0 0 10px}.viewtabs button{flex:1;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px;font-weight:900;color:var(--muted)}
+.viewtabs button.active{background:#173b42;color:#fff;border-color:#173b42}
+.sourcebox{background:#edf7f8;border-radius:13px;padding:11px;margin-top:10px;color:#527077;font-size:11px;line-height:1.55}
+.sourcebox b{color:#173b42}
+.alertbtn{border:0;background:#fff3d8;color:#8f6200;border-radius:12px;padding:10px 12px;font-weight:900;margin-top:9px}
+
 </style>
 </head>
 <body><div class="app">
 <header><div class="eyebrow">KOREA BEACH DASHBOARD</div><h1>🌊 우리 가족 바다</h1><div class="sub">전국 주요 해수욕장의 물놀이 조건을 비교해요.</div></header>
 <section class="hero"><div class="heroTop"><div><div class="heroSmall">오늘 추천 1위</div><div class="heroMain" id="best">확인 중…</div><div class="heroInfo" id="bestInfo">전국 데이터를 불러오고 있어요.</div></div><button class="iconbtn" onclick="loadAll()">↻</button></div><div class="top3" id="top3"></div></section>
+<div class="modebar" id="modes">
+<button class="mode active" onclick="setMode('family',this)">👶 가족</button>
+<button class="mode" onclick="setMode('swim',this)">🏊 물놀이</button>
+<button class="mode" onclick="setMode('surf',this)">🏄 서핑</button>
+<button class="mode" onclick="setMode('snorkel',this)">🤿 스노클링</button>
+<button class="mode" onclick="setMode('fish',this)">🎣 낚시</button>
+</div>
+<section class="weekend">
+ <div class="weekendHead"><div><h3>📅 이번 주말 어디 갈까?</h3><div class="sub" id="weekendText">예보를 불러오면 자동 추천해요.</div></div><button onclick="showWeekend()">추천 보기</button></div>
+ <div class="weekendList" id="weekendList"></div>
+</section>
+<div class="viewtabs"><button id="listTab" class="active" onclick="setView('list')">☷ 목록</button><button id="mapTab" onclick="setView('map')">🗺 전국 지도</button></div>
+<div class="mapPanel" id="mapPanel"><div id="map"></div></div>
 <div class="toolbar"><input id="search" class="search" placeholder="해변·지역 검색" oninput="render()"><button class="locate" onclick="getLocation()">📍 거리</button></div>
 <div class="chips" id="chips"></div>
 <div class="options"><span class="count" id="count">-</span><select id="sort" onchange="render()"><option value="score">추천순</option><option value="temp">수온 높은 순</option><option value="wave">잔잔한 순</option><option value="distance">가까운 순</option><option value="favorite">즐겨찾기 우선</option></select></div>
 <div id="error"></div><main class="grid" id="cards"></main>
-<section class="notice"><b>데이터 이용 안내</b><br>수온·파고는 해양 예측 모델값이며 해변 얕은 수심의 실제 수온과 다를 수 있습니다. 냉수대 특보와 실측 수온, 현장 입수 통제는 공식 정보를 반드시 확인하세요.
+<section class="notice"><b>데이터 출처와 이용 안내</b><br>
+화면의 수온·파고·파주기는 Open-Meteo Marine API의 해양 예측 모델값이고, 바람·강수·UV는 Open-Meteo Weather API 예보입니다. 국립수산과학원은 냉수대 특보와 관측소 실측 수온 확인용, 바다누리는 종합 해양정보 확인용으로 연결합니다. 모델값은 해변 실측값이 아니며 연안 정확도에 한계가 있습니다.
+<div class="sourcebox"><b>자동 반영</b> Open-Meteo 해양·기상 예보<br><b>최종 확인</b> 국립수산과학원 냉수대·실측 수온, 국립해양조사원 바다누리<br><b>지도</b> OpenStreetMap 지도 타일, 네이버 지도 검색 연결</div>
+<button class="alertbtn" onclick="enableAlerts()">🔔 즐겨찾기 저수온 알림 켜기</button>
 <div class="links"><a target="_blank" href="https://www.nifs.go.kr/risa/">냉수대·실측 수온</a><a target="_blank" href="https://www.khoa.go.kr/oceangrid/">바다누리</a></div></section>
 </div>
 <nav class="bottom"><div class="bottomIn"><button onclick="showTop()">🏆 추천</button><button onclick="toggleFavView()">⭐ 즐겨찾기</button><a target="_blank" href="https://www.nifs.go.kr/risa/">❄️ 냉수대</a></div></nav>
 <div class="modal" id="modal" onclick="if(event.target===this)closeModal()"><div class="sheet" id="sheet"></div></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+ integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 const BEACHES=[{"name": "을왕리", "region": "인천·경기", "area": "인천", "lat": 37.447, "lon": 126.372}, {"name": "왕산", "region": "인천·경기", "area": "인천", "lat": 37.459, "lon": 126.359}, {"name": "제부도", "region": "인천·경기", "area": "화성", "lat": 37.166, "lon": 126.619}, {"name": "대부도 방아머리", "region": "인천·경기", "area": "안산", "lat": 37.292, "lon": 126.577}, {"name": "속초", "region": "강원", "area": "속초", "lat": 38.19, "lon": 128.603}, {"name": "고성 송지호", "region": "강원", "area": "고성", "lat": 38.335, "lon": 128.526}, {"name": "양양 낙산", "region": "강원", "area": "양양", "lat": 38.117, "lon": 128.633}, {"name": "양양 죽도", "region": "강원", "area": "양양", "lat": 37.97, "lon": 128.761}, {"name": "강릉 경포", "region": "강원", "area": "강릉", "lat": 37.805, "lon": 128.909}, {"name": "강릉 안목", "region": "강원", "area": "강릉", "lat": 37.772, "lon": 128.948}, {"name": "동해 망상", "region": "강원", "area": "동해", "lat": 37.593, "lon": 129.09}, {"name": "삼척", "region": "강원", "area": "삼척", "lat": 37.467, "lon": 129.165}, {"name": "대천", "region": "충남", "area": "보령", "lat": 36.305, "lon": 126.512}, {"name": "무창포", "region": "충남", "area": "보령", "lat": 36.244, "lon": 126.536}, {"name": "만리포", "region": "충남", "area": "태안", "lat": 36.788, "lon": 126.143}, {"name": "꽃지", "region": "충남", "area": "태안", "lat": 36.497, "lon": 126.335}, {"name": "춘장대", "region": "충남", "area": "서천", "lat": 36.163, "lon": 126.527}, {"name": "선유도", "region": "전북", "area": "군산", "lat": 35.812, "lon": 126.409}, {"name": "변산", "region": "전북", "area": "부안", "lat": 35.68, "lon": 126.529}, {"name": "격포", "region": "전북", "area": "부안", "lat": 35.624, "lon": 126.468}, {"name": "만성리", "region": "전남", "area": "여수", "lat": 34.777, "lon": 127.744}, {"name": "모사금", "region": "전남", "area": "여수", "lat": 34.752, "lon": 127.768}, {"name": "율포솔밭", "region": "전남", "area": "보성", "lat": 34.672, "lon": 127.091}, {"name": "명사십리", "region": "전남", "area": "완도", "lat": 34.326, "lon": 126.804}, {"name": "송호", "region": "전남", "area": "해남", "lat": 34.315, "lon": 126.52}, {"name": "대광", "region": "전남", "area": "신안", "lat": 35.103, "lon": 126.069}, {"name": "월포", "region": "경북", "area": "포항", "lat": 36.207, "lon": 129.371}, {"name": "칠포", "region": "경북", "area": "포항", "lat": 36.118, "lon": 129.397}, {"name": "영일대", "region": "경북", "area": "포항", "lat": 36.057, "lon": 129.378}, {"name": "구룡포", "region": "경북", "area": "포항", "lat": 35.99, "lon": 129.559}, {"name": "오류고아라", "region": "경북", "area": "경주", "lat": 35.828, "lon": 129.508}, {"name": "나정고운모래", "region": "경북", "area": "경주", "lat": 35.789, "lon": 129.488}, {"name": "망양정", "region": "경북", "area": "울진", "lat": 36.984, "lon": 129.413}, {"name": "고래불", "region": "경북", "area": "영덕", "lat": 36.603, "lon": 129.414}, {"name": "진하", "region": "울산", "area": "울주", "lat": 35.386, "lon": 129.345}, {"name": "일산", "region": "울산", "area": "동구", "lat": 35.498, "lon": 129.431}, {"name": "상주은모래비치", "region": "경남", "area": "남해", "lat": 34.723, "lon": 127.988}, {"name": "송정솔바람", "region": "경남", "area": "남해", "lat": 34.716, "lon": 127.839}, {"name": "구조라", "region": "경남", "area": "거제", "lat": 34.809, "lon": 128.689}, {"name": "학동흑진주몽돌", "region": "경남", "area": "거제", "lat": 34.774, "lon": 128.642}, {"name": "비진도", "region": "경남", "area": "통영", "lat": 34.72, "lon": 128.456}, {"name": "일광", "region": "부산", "area": "기장", "lat": 35.26, "lon": 129.233}, {"name": "임랑", "region": "부산", "area": "기장", "lat": 35.318, "lon": 129.264}, {"name": "송정", "region": "부산", "area": "해운대", "lat": 35.178, "lon": 129.199}, {"name": "해운대", "region": "부산", "area": "해운대", "lat": 35.158, "lon": 129.16}, {"name": "광안리", "region": "부산", "area": "수영", "lat": 35.153, "lon": 129.118}, {"name": "다대포", "region": "부산", "area": "사하", "lat": 35.046, "lon": 128.966}, {"name": "협재", "region": "제주", "area": "제주", "lat": 33.394, "lon": 126.239}, {"name": "금능", "region": "제주", "area": "제주", "lat": 33.39, "lon": 126.235}, {"name": "곽지", "region": "제주", "area": "제주", "lat": 33.45, "lon": 126.304}, {"name": "함덕", "region": "제주", "area": "제주", "lat": 33.543, "lon": 126.669}, {"name": "김녕", "region": "제주", "area": "제주", "lat": 33.557, "lon": 126.759}, {"name": "월정리", "region": "제주", "area": "제주", "lat": 33.556, "lon": 126.795}, {"name": "표선", "region": "제주", "area": "서귀포", "lat": 33.327, "lon": 126.838}, {"name": "중문색달", "region": "제주", "area": "서귀포", "lat": 33.245, "lon": 126.409}];
 const REGIONS=["전체","인천·경기","강원","충남","전북","전남","경북","울산","경남","부산","제주"];
-let records=[],active="전체",userPos=null,favOnly=false;
+let records=[],active="전체",userPos=null,favOnly=false,mode="family",viewMode="list",map=null,markers=[];
 let favorites=new Set(JSON.parse(localStorage.getItem("seaFavorites")||"[]"));
 document.getElementById("chips").innerHTML=REGIONS.map((x,i)=>`<button class="chip ${i===0?"active":""}" onclick="setRegion('${x}',this)">${x}</button>`).join("");
 function setRegion(x,el){active=x;favOnly=false;document.querySelectorAll(".chip").forEach(e=>e.classList.remove("active"));el.classList.add("active");render()}
+function setMode(x,el){mode=x;document.querySelectorAll(".mode").forEach(e=>e.classList.remove("active"));el.classList.add("active");render();updateTop();updateMap()}
+function setView(x){viewMode=x;document.getElementById("listTab").classList.toggle("active",x==="list");document.getElementById("mapTab").classList.toggle("active",x==="map");document.getElementById("cards").style.display=x==="list"?"grid":"none";document.getElementById("mapPanel").style.display=x==="map"?"block":"none";if(x==="map"){initMap();setTimeout(()=>map.invalidateSize(),100);updateMap()}}
+function initMap(){if(map)return;map=L.map("map").setView([36.1,127.8],7);L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"© OpenStreetMap"}).addTo(map)}
+function updateMap(){if(!map)return;markers.forEach(m=>map.removeLayer(m));markers=[];list().forEach(r=>{let j=judge(r),color=j.cls==="good"?"#188a46":j.cls==="warn"?"#da8200":"#d84a4a";let m=L.circleMarker([r.lat,r.lon],{radius:8,color:"#fff",weight:2,fillColor:color,fillOpacity:.9}).addTo(map);m.bindPopup(`<b>${r.name}</b><br>${j.text} · ${j.score}점<br>수온 ${fmt(r.temp,"℃")} / 파고 ${fmt(r.wave,"m")}`);markers.push(m)})}
+function enableAlerts(){if(!("Notification"in window)){alert("이 브라우저는 알림을 지원하지 않습니다.");return}Notification.requestPermission().then(p=>{if(p==="granted"){localStorage.setItem("seaAlerts","on");alert("알림이 켜졌습니다. 사이트를 열 때 즐겨찾기 해변 상태를 확인합니다.");notifyCold()}})}
+function showWeekend(){document.getElementById("weekendText").textContent="현재 확보된 3일 예보 중 주말 시간대에 가까운 조건을 기준으로 추천합니다.";let a=[...records].filter(r=>judge(r).score>=0).sort((x,y)=>judge(y).score-judge(x).score).slice(0,3);document.getElementById("weekendList").innerHTML=a.map((r,i)=>`<div class="weekendItem"><b>${i+1}. ${r.name}</b>${judge(r).score}점<br>${fmt(r.temp,"℃")} · ${fmt(r.wave,"m")}</div>`).join("")}
 function hav(a,b,c,d){const R=6371,q=Math.PI/180,da=(c-a)*q,do_=(d-b)*q;return 2*R*Math.asin(Math.sqrt(Math.sin(da/2)**2+Math.cos(a*q)*Math.cos(c*q)*Math.sin(do_/2)**2))}
-function judge(r){if(r.temp==null||r.wave==null)return{text:"확인 필요",cls:"unknown",score:-99};let s=50+(r.temp-22)*8-r.wave*24-(r.wind||0)*1.2-(r.rain||0)*2; if(r.uv>8)s-=8;s=Math.max(0,Math.min(100,Math.round(s)));if(r.temp>=24&&r.wave<=.5&&r.wind<=6)return{text:"아기 물놀이 추천",cls:"good",score:s};if(r.temp>=22&&r.wave<=.8&&r.wind<=9)return{text:"짧게 가능",cls:"warn",score:s};return{text:"오늘은 비추천",cls:"bad",score:s}}
+function judge(r){
+ if(r.temp==null||r.wave==null)return{text:"확인 필요",cls:"unknown",score:-99};
+ const wind=r.wind||0,rain=r.rain||0,uv=r.uv||0,period=r.period||0;
+ let s=50,text="조건 확인",cls="warn";
+ if(mode==="family"){s=58+(r.temp-23)*9-r.wave*28-wind*1.5-rain*3-(uv>8?8:0); text=r.temp>=24&&r.wave<=.5&&wind<=6?"아기 물놀이 추천":r.temp>=22&&r.wave<=.8&&wind<=9?"짧게 가능":"오늘은 비추천";}
+ if(mode==="swim"){s=55+(r.temp-22)*8-r.wave*25-wind-rain*3; text=r.temp>=23&&r.wave<=.7?"물놀이 추천":r.temp>=21&&r.wave<=1?"주의해서 가능":"비추천";}
+ if(mode==="surf"){s=45+r.wave*28+period*2-Math.abs(wind-5)*2-rain; text=r.wave>=.7&&r.wave<=2.2&&wind<=11?"서핑 조건 양호":r.wave<.5?"파도 부족":"주의 필요";}
+ if(mode==="snorkel"){s=62+(r.temp-22)*6-r.wave*35-wind*2-rain*4; text=r.temp>=23&&r.wave<=.4&&wind<=5?"스노클링 추천":r.wave<=.7?"주의해서 가능":"시야·파고 주의";}
+ if(mode==="fish"){s=55-r.wave*13-Math.abs(wind-4)*2-rain+(period>5?5:0); text=r.wave<=1.2&&wind<=9?"낚시 조건 양호":"기상 주의";}
+ s=Math.max(0,Math.min(100,Math.round(s))); cls=s>=75?"good":s>=50?"warn":"bad";
+ return{text,cls,score:s}
+}
 function toggleFav(name){favorites.has(name)?favorites.delete(name):favorites.add(name);localStorage.setItem("seaFavorites",JSON.stringify([...favorites]));render()}
 function list(){let q=document.getElementById("search").value.trim().toLowerCase(),a=records.filter(r=>(active==="전체"||r.region===active)&&(!q||(`${r.name} ${r.area} ${r.region}`).toLowerCase().includes(q))&&(!favOnly||favorites.has(r.name)));let s=document.getElementById("sort").value;a.sort((x,y)=>s==="temp"?(y.temp??-99)-(x.temp??-99):s==="wave"?(x.wave??99)-(y.wave??99):s==="distance"?(x.distance??9999)-(y.distance??9999):s==="favorite"?(favorites.has(y.name)?1:0)-(favorites.has(x.name)?1:0):judge(y).score-judge(x).score);return a}
 function card(r){let j=judge(r),star=favorites.has(r.name)?"★":"☆";return `<article class="card"><div class="ctop"><div><div class="name">${r.name}</div><div class="area">${r.region} · ${r.area}${r.distance!=null?` · ${r.distance.toFixed(0)}km`:""}</div></div><div class="actions"><button class="star" onclick="toggleFav('${r.name}')">${star}</button><button class="detail" onclick="openDetail('${r.name}')">상세</button></div></div><span class="badge ${j.cls}">${j.text}</span><span class="score">${j.score>=0?j.score+"점":""}</span><div class="metrics"><div class="metric"><div class="ml">수온</div><div class="mv">${fmt(r.temp,"℃")}</div></div><div class="metric"><div class="ml">파고</div><div class="mv">${fmt(r.wave,"m")}</div></div><div class="metric"><div class="ml">바람</div><div class="mv">${fmt(r.wind,"m/s")}</div></div><div class="metric"><div class="ml">UV</div><div class="mv">${r.uv==null?"--":r.uv.toFixed(0)}</div></div></div><div class="foot"><span>${r.rain>0?`☔ 강수 ${r.rain.toFixed(1)}mm`:"☀️ 강수 없음"}</span><span>${r.temp<22?"❄️ 저수온 주의":"모델 예측값"}</span></div></article>`}
 function fmt(v,u){return v==null?"--":v.toFixed(1)+u}
-function render(){let a=list();document.getElementById("cards").innerHTML=a.map(card).join("")||`<div class="notice">조건에 맞는 해변이 없습니다.</div>`;document.getElementById("count").textContent=`${a.length}개 해변`}
+function render(){let a=list();document.getElementById("cards").innerHTML=a.map(card).join("")||`<div class="notice">조건에 맞는 해변이 없습니다.</div>`;document.getElementById("count").textContent=`${a.length}개 해변`;updateMap()}
 function updateTop(){let a=[...records].filter(x=>judge(x).score>=0).sort((x,y)=>judge(y).score-judge(x).score).slice(0,3);if(!a.length)return;let b=a[0],j=judge(b);document.getElementById("best").textContent=`${b.name} · ${j.score}점`;document.getElementById("bestInfo").textContent=`수온 ${fmt(b.temp,"℃")} · 파고 ${fmt(b.wave,"m")} · 바람 ${fmt(b.wind,"m/s")}`;document.getElementById("top3").innerHTML=a.map((r,i)=>`<div class="rank"><b>${i+1}. ${r.name}</b><span>${judge(r).score}점 · ${fmt(r.temp,"℃")}</span></div>`).join("")}
 function showTop(){active="전체";favOnly=false;document.getElementById("sort").value="score";render();scrollTo({top:0,behavior:"smooth"})}
 function toggleFavView(){favOnly=!favOnly;active="전체";render();document.getElementById("count").textContent+=(favOnly?" · 즐겨찾기":"")}
@@ -69,7 +123,7 @@ async function fetchBatch(batch){
  const [mr,wr]=await Promise.all([fetch(mu),fetch(wu)]);if(!mr.ok||!wr.ok)throw Error("API");let m=await mr.json(),w=await wr.json();m=Array.isArray(m)?m:[m];w=Array.isArray(w)?w:[w];
  return batch.map((b,i)=>{let mm=m[i],ww=w[i],now=Date.now(),idx=0,d=Infinity;(mm.hourly?.time||[]).forEach((t,k)=>{let x=Math.abs(new Date(t).getTime()-now);if(x<d){d=x;idx=k}});return {...b,temp:mm.hourly?.sea_surface_temperature?.[idx]??null,wave:mm.hourly?.wave_height?.[idx]??null,period:mm.hourly?.wave_period?.[idx]??null,wind:ww.current?.wind_speed_10m??null,rain:ww.current?.precipitation??null,uv:ww.daily?.uv_index_max?.[0]??null,tempTrend:(mm.hourly?.sea_surface_temperature||[]).filter((_,k)=>k%6===0).slice(0,12),distance:userPos?hav(userPos.lat,userPos.lon,b.lat,b.lon):null}})}
 async function loadAll(){document.getElementById("error").style.display="none";try{let chunks=[];for(let i=0;i<BEACHES.length;i+=15)chunks.push(BEACHES.slice(i,i+15));let all=await Promise.all(chunks.map(fetchBatch));records=all.flat();localStorage.setItem("seaCacheV2",JSON.stringify({t:Date.now(),records}));render();updateTop();notifyCold()}catch(e){let er=document.getElementById("error");er.style.display="block";er.textContent="데이터를 불러오지 못했습니다. 잠시 후 새로고침하거나 공식 해양정보를 확인해 주세요."}}
-function notifyCold(){if(Notification.permission!=="granted")return;let cold=records.filter(r=>favorites.has(r.name)&&r.temp!=null&&r.temp<22);if(cold.length)new Notification("즐겨찾기 해변 저수온 주의",{body:cold.map(x=>`${x.name} ${x.temp.toFixed(1)}℃`).join(", ")})}
+function notifyCold(){if(localStorage.getItem("seaAlerts")!=="on"||Notification.permission!=="granted")return;let cold=records.filter(r=>favorites.has(r.name)&&r.temp!=null&&r.temp<22);if(cold.length)new Notification("즐겨찾기 해변 저수온 주의",{body:cold.map(x=>`${x.name} ${x.temp.toFixed(1)}℃`).join(", ")})}
 try{let c=JSON.parse(localStorage.getItem("seaCacheV2"));if(c?.records){records=c.records;render();updateTop()}}catch(e){}
 loadAll();if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});
 </script></body></html>
